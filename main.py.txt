@@ -1,0 +1,54 @@
+import os
+import logging
+import schedule
+import time
+import threading
+from datetime import datetime
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, CallbackContext
+
+# ✅ Get environment variables
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")
+
+# ✅ Logging
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+# ✅ Commands
+def start(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text('Namaste Bhai! 👋 Type /today to get today\'s market plan 📈')
+
+def today(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text("📊 Aaj ka market setup:\n\n✅ Nifty: Bullish\n✅ BankNifty: Sideways\n✅ Watchlist: TCS, ICICIBANK\n\nHappy trading bhava! 🚀")
+
+# ✅ Daily auto message
+def send_daily_update():
+    from telegram import Bot
+    bot = Bot(token=BOT_TOKEN)
+    now = datetime.now().strftime("%d-%m-%Y")
+    bot.send_message(chat_id=CHAT_ID, text=f"📅 {now} ka update:\n\n📊 Market outlook: Neutral to bullish\n🔍 Stocks to watch: INFY, RELIANCE\n🕘 Time to plan your trades!")
+
+# ✅ Scheduler loop
+def run_scheduler():
+    schedule.every().day.at("08:30").do(send_daily_update)
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
+# ✅ Main bot function
+def main():
+    updater = Updater(BOT_TOKEN)
+    dispatcher = updater.dispatcher
+
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("today", today))
+
+    # Start scheduler in background
+    t = threading.Thread(target=run_scheduler)
+    t.start()
+
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
